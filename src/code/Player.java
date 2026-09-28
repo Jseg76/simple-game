@@ -22,6 +22,10 @@ public class Player {
     public void moveX(int xSpeed) {
         this.x += xSpeed;
     }
+    public void moveY(int ySpeed) {
+        this.y += ySpeed;
+    }
+
     public void update() {
 
     }

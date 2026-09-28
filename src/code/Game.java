@@ -5,9 +5,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferStrategy;
 
-public class Game implements Runnable {
-    Canvas canvas = Main.getCanvas();
-
+public class Game implements Runnable, KeyListener{
+    Canvas canvas = new Canvas();
     boolean running = false;
     int width = Main.width;
     int height = Main.height;
@@ -24,26 +23,34 @@ public class Game implements Runnable {
         frame.setResizable(false);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-
-        canvas = new Canvas();
         canvas.setSize(width, height);
         frame.add(canvas);
         frame.pack();
-        frame.addKeyListener(new KeyAdapter() {
-            public void keyPressed(KeyEvent e) {
-                super.keyPressed(e);
-            }
-        });
+        frame.addKeyListener( this);
+    }
+    public void keyTyped(KeyEvent e) {
+
     }
     public void keyPressed(KeyEvent e) {
-        char key = e.getKeyChar();
-        if (key == KeyEvent.VK_D) {
-            player.moveX(player.speed);
-        }
-        if (key == KeyEvent.VK_A) {
-            player.moveX(-player.speed);
+        switch ((char) e.getKeyCode()) {
+            case 'W':
+                player.moveY(-10);
+                break;
+            case 'A':
+                player.moveX(-10);
+                break;
+            case 'D':
+                player.moveX(10);
+                break;
+            case 'S':
+                player.moveY(10);
+                break;
         }
     }
+    public void keyReleased(KeyEvent e) {
+
+    }
+
     public void run(){
         while (running) {
             update();
