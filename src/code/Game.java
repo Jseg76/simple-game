@@ -5,7 +5,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferStrategy;
 
-public class Game implements Runnable, KeyListener{
+public class Game implements Runnable, KeyListener, MouseListener {
     Canvas canvas = new Canvas();
     boolean running = false, fullscreen = false;
     int width = Main.width;
@@ -25,12 +25,35 @@ public class Game implements Runnable, KeyListener{
         frame.setVisible(true);
         canvas.setSize(width, height);
         frame.add(canvas);
+        frame.addKeyListener(this);
         frame.pack();
-        frame.addKeyListener( this);
         return frame;
     }
+    //mouse events
+    public void mouseClicked(MouseEvent e) {
+    }
+    @Override
+    public void mousePressed(MouseEvent e) {
+        if (e.getButton() == MouseEvent.BUTTON1)
+            System.out.println("clicked");
+    }
+    @Override
+    public void mouseReleased(MouseEvent e) {
+
+    }
+    @Override
+    public void mouseEntered(MouseEvent e) {
+
+    }
+    @Override
+    public void mouseExited(MouseEvent e) {
+
+    }
+    //key events
+    @Override
     public void keyTyped(KeyEvent e) {
     }
+    @Override
     public void keyPressed(KeyEvent e) {
         switch ((char) e.getKeyCode()) {
             case 'W':
@@ -47,19 +70,19 @@ public class Game implements Runnable, KeyListener{
                 break;
             case 'F':
                 if (!fullscreen) {
-                    Main.scale = 2;
+//                    Main.scale = 2;
                     fullscreen = true;
                     Main.frame.setSize(Toolkit.getDefaultToolkit().getScreenSize());
                     Main.frame.setLocationRelativeTo(null);
-                }
-                else {
-                    Main.scale = 1;
+                } else {
+//                    Main.scale = 1;
                     fullscreen = false;
-                    Main.frame.setSize(Toolkit.getDefaultToolkit().getScreenSize().width/2,Toolkit.getDefaultToolkit().getScreenSize().height/2);
+                    Main.frame.setSize(Toolkit.getDefaultToolkit().getScreenSize().width / 2, Toolkit.getDefaultToolkit().getScreenSize().height / 2);
                     Main.frame.setLocationRelativeTo(null);
                 }
         }
     }
+    @Override
     public void keyReleased(KeyEvent e) {
         switch ((char) e.getKeyCode()) {
             case 'W':
@@ -76,7 +99,9 @@ public class Game implements Runnable, KeyListener{
                 break;
         }
     }
-    public void run(){
+
+    @Override
+    public void run() {
         double drawTime = 1000000000/Main.FPS;
         double delta = 0;
         long lastTime = System.nanoTime();
@@ -84,19 +109,20 @@ public class Game implements Runnable, KeyListener{
 
         while (running) {
             currentTime = System.nanoTime();
-            delta += (currentTime-lastTime)/drawTime;
+            delta += (currentTime - lastTime) / drawTime;
             lastTime = currentTime;
 
-            if (delta>=1) {
+            if (delta >= 1) {
                 update();
                 draw();
                 delta--;
             }
         }
     }
-    public void draw(){
+
+    public void draw() {
         bs = canvas.getBufferStrategy();
-        if (bs == null){
+        if (bs == null) {
             canvas.createBufferStrategy(3);
             return;
         }
@@ -106,7 +132,8 @@ public class Game implements Runnable, KeyListener{
         bs.show();
         g.dispose();
     }
-    public void update(){
+
+    public void update() {
         player.update();
     }
 }
