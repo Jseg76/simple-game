@@ -14,7 +14,7 @@ public class Game implements Runnable, KeyListener{
     public BufferStrategy bs;
     public Graphics g;
 
-    Player player = new Player(100, 100, 50, 50, Color.RED, 10);
+    Player player = new Player(100, 100, 50, 50, Color.RED, 5);
 
     public JFrame addFrame() {
         JFrame frame = new JFrame();
@@ -34,34 +34,64 @@ public class Game implements Runnable, KeyListener{
     public void keyPressed(KeyEvent e) {
         switch ((char) e.getKeyCode()) {
             case 'W':
-                player.moveY(-10);
+                player.wDown = true;
                 break;
             case 'A':
-                player.moveX(-10);
+                player.aDown = true;
                 break;
             case 'D':
-                player.moveX(10);
+                player.dDown = true;
                 break;
             case 'S':
-                player.moveY(10);
+                player.sDown = true;
                 break;
             case 'F':
                 if (!fullscreen) {
+                    Main.scale = 2;
                     fullscreen = true;
                     Main.frame.setSize(Toolkit.getDefaultToolkit().getScreenSize());
+                    Main.frame.setLocationRelativeTo(null);
                 }
                 else {
+                    Main.scale = 1;
                     fullscreen = false;
-                    Main.frame.setSize(800, 600);
+                    Main.frame.setSize(Toolkit.getDefaultToolkit().getScreenSize().width/2,Toolkit.getDefaultToolkit().getScreenSize().height/2);
+                    Main.frame.setLocationRelativeTo(null);
                 }
         }
     }
     public void keyReleased(KeyEvent e) {
+        switch ((char) e.getKeyCode()) {
+            case 'W':
+                player.wDown = false;
+                break;
+            case 'A':
+                player.aDown = false;
+                break;
+            case 'D':
+                player.dDown = false;
+                break;
+            case 'S':
+                player.sDown = false;
+                break;
+        }
     }
     public void run(){
+        double drawTime = 1000000000/Main.FPS;
+        double delta = 0;
+        long lastTime = System.nanoTime();
+        long currentTime;
+
         while (running) {
-            update();
-            draw();
+            currentTime = System.nanoTime();
+            delta += (currentTime-lastTime)/drawTime;
+            lastTime = currentTime;
+
+            if (delta>=1) {
+                update();
+                draw();
+                delta--;
+            }
         }
     }
     public void draw(){
@@ -77,6 +107,6 @@ public class Game implements Runnable, KeyListener{
         g.dispose();
     }
     public void update(){
-
+        player.update();
     }
 }
