@@ -17,11 +17,13 @@ public class Player {
         this.height = height;
         this.speed = speed;
     }
+
     public void draw(Graphics g) {
-        scale = Main.scale;
+        scale = 1;
         g.setColor(this.color);
         g.fillOval(this.x*scale, this.y*scale, this.width*scale, this.height*scale);
     }
+
     public void moveX(int xSpeed) {
         if (this.aDown) {
             this.x -= xSpeed;
@@ -30,6 +32,7 @@ public class Player {
             this.x += xSpeed;
         }
     }
+
     public void moveY(int ySpeed) {
         if (this.wDown) {
             this.y -= ySpeed;
