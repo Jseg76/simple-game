@@ -1,70 +1,41 @@
 package code;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.ArrayList;
+import java.io.*;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
 
-public class Server {
+public class Server extends Thread {
     int port;
-    String host;
-    ArrayList <PrintWriter> clients;
-    public Server(int port, String host, ArrayList clients) {
-        this.port = port;
-        this.host = host;
-        this.clients = clients;
-
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
-            while (true) {
-                new ClientHandler (this, serverSocket.accept()).start();
-            }
+    DatagramSocket socket;
+    public Server(int port) {
+        try  {
+            this.port = port;
+            this.socket = new DatagramSocket(port);
         }
         catch (IOException e) {
+            e.printStackTrace();
         }
-    }
-}
-class ClientHandler extends Thread {
-    private Socket socket;
-    static private PrintWriter out;
-    static private BufferedReader in;
-    public Server server;
-
-    public ClientHandler(Server server, Socket socket) {
-        this.socket = socket;
-        this.server = server;
     }
     public void run() {
-        try {
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintWriter(socket.getOutputStream(), true);
-            synchronized (server.clients) {
-                server.clients.add(out);
-            }
-            String message;
-            while ((message = in.readLine()) != null) {
-                System.out.println(message);
-                broadcast(message);
-            }
-        }
-        catch (IOException e) {
-        }
-        finally {
+        System.out.println("server is up");
+        while (true) {
             try {
-                socket.close();
+                byte[] data = new byte[2048];
+                DatagramPacket packet = new DatagramPacket(data, data.length);
+                socket.receive(packet);
+                System.out.println(data);
+                send("hello".getBytes(StandardCharsets.UTF_8), packet.getAddress(), packet.getPort());
             }
-            catch (IOException e){
-
+            catch (IOException e) {
+                System.out.println("no");
             }
         }
     }
-    private void broadcast(String message) {
-        synchronized (server.clients) {
-            for (PrintWriter client : server.clients) {
-                client.println(message);
-            }
+    public void send(byte[] data, InetAddress address, int port) {
+        DatagramPacket packet = new DatagramPacket(data, data.length, address, port);
+        try {
+            socket.send(packet);
+        } catch (IOException e) {
         }
     }
 }
