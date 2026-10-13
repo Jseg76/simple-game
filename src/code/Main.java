@@ -2,6 +2,8 @@ package code;
 
 import javax.swing.JFrame;
 import java.awt.*;
+import java.io.IOException;
+import java.net.ServerSocket;
 
 
 public class Main {
@@ -11,18 +13,18 @@ public class Main {
     private static Canvas canvas;
     static int scale = 1;
     static int FPS = 60;
+    static int port = 8888;
 
-    public static void main() {
+    public static void main() throws IOException {
         Game game = new Game();
         frame =  game.addFrame();
-        Server server = new Server(2000);
-        server.start();
 
-        Client client = new Client("localhost");
-        client.start();
+        ServerSocket serverSocket = new ServerSocket(port);
+        Server server = new Server(serverSocket);
+        server.runServer();
 
-        Thread thread = new Thread(game);
-        thread.start();
+        Thread gameThread = new Thread(game);
+        gameThread.start();
         game.running = true;
     }
 }
