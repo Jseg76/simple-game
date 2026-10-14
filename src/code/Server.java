@@ -2,7 +2,6 @@ package code;
 
 import java.io.*;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
 
 public class Server {
     ServerSocket serverSocket;
@@ -13,7 +12,7 @@ public class Server {
         try {
             while (!serverSocket.isClosed()) {
                 Socket socket = serverSocket.accept();
-                System.out.println("joined");
+                System.out.println("Someone joined");
                 ClientHandler clientHandler = new ClientHandler(socket);
 
                 Thread clientHandlerThread = new Thread(clientHandler);
