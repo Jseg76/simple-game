@@ -2,8 +2,11 @@ package code;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.Serializable;
+import java.io.Serializable.*;
 
-public class Player {
+public class Player implements Serializable {
+    private static final long serialVersionUID = 1;
     int x, y, width, height, speed;
     Color color;
     int scale;
@@ -45,5 +48,8 @@ public class Player {
     public void update() {
         moveX(this.speed);
         moveY(this.speed);
+    }
+    public void thing() {
+        System.out.println("hello");
     }
 }
