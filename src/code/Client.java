@@ -1,80 +1,65 @@
 package code;
 
+import java.awt.*;
 import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
+import java.awt.color.*;
 
 public class Client{
     private Socket socket;
-    private BufferedReader bufferedReader;
-    private BufferedWriter bufferedWriter;
+    private ObjectOutputStream out;
+    private ObjectInputStream in;
     private String user;
+    private Player player;
+    private Player p;
 
     public Client(Socket socket, String user) {
         try {
             this.socket = socket;
-            this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-            this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            this.out = new ObjectOutputStream(socket.getOutputStream());
+            this.in = new ObjectInputStream(socket.getInputStream());
             this.user = user;
+            this.player = new Player(150, 200, 50, 50, Color.RED, 10);
         }
         catch (IOException e) {
-            closeAll(socket, bufferedReader, bufferedWriter);
+            closeAll(socket, in, out);
         }
     }
-    public void sendMessage() {
-        try {
-            bufferedWriter.write(user);
-            bufferedWriter.newLine();
-            bufferedWriter.flush();
-
-            Scanner scanner = new Scanner(System.in);
-            while (socket.isConnected()) {
-                String message = scanner.nextLine();
-                bufferedWriter.write(user + ": " + message);
-                bufferedWriter.newLine();
-                bufferedWriter.flush();
-            }
-        }
-        catch (IOException e) {
-            closeAll(socket, bufferedReader, bufferedWriter);
+    public void sendMessage() throws IOException {
+        while (socket.isConnected()) {
+            out.writeObject(player);
+            out.flush();
         }
     }
     public void listen() {
         new Thread(new Runnable() {
             public void run() {
-                String message;
                 while (socket.isConnected()) {
-                    try {
-                        message = bufferedReader.readLine();
-                        System.out.println(message);
-                    } catch (IOException e) {
-                        closeAll(socket, bufferedReader, bufferedWriter);
-                    }
+
                 }
             }
         }).start();
     }
-    public void closeAll(Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter) {
+    public void closeAll(Socket socket, ObjectInputStream in, ObjectOutputStream out) {
         try {
-            if (bufferedReader != null) {
-                bufferedReader.close();
+            if (in != null) {
+                in.close();
             }
-            if (bufferedWriter != null) {
-                bufferedWriter.close();
+            if (out != null) {
+                out.close();
             }
             if (socket != null) {
                 socket.close();
             }
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             e.printStackTrace();
         }
-    }
+}
     public static void main() throws IOException {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Enter user");
-        String user = scanner.nextLine();
         Socket socket = new Socket("localhost", 8888);
-        Client client = new Client(socket, user);
+        Client client = new Client(socket, "j");
         client.listen();
         client.sendMessage();
     }
