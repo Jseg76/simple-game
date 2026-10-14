@@ -1,5 +1,6 @@
 package code;
 
+import java.awt.*;
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -7,61 +8,53 @@ import java.util.ArrayList;
 public class ClientHandler implements Runnable{
     public static ArrayList<ClientHandler> clients = new ArrayList<>();
     private Socket socket;
-    private BufferedReader bufferedReader;
-    private BufferedWriter bufferedWriter;
-    private String user;
+    private ObjectOutputStream out;
+    private ObjectInputStream in;
+    private String user = "j";
+    private Player player;
 
     public ClientHandler(Socket socket) {
         try {
             this.socket = socket;
-            this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-            this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            this.user = bufferedReader.readLine();
+            this.out = new ObjectOutputStream(socket.getOutputStream());
+            this.in = new ObjectInputStream(socket.getInputStream());
+            this.player = new Player(150, 200, 50, 50,Color.RED, 10);
             clients.add(this);
-            sendMessage("welcome " + user);
         }
         catch (IOException e) {
-            closeAll(socket, bufferedReader, bufferedWriter);
+            closeAll(socket, in, out);
         }
     }
     public void run() {
-        String message;
         while (socket.isConnected()) {
-            try {
-                message = bufferedReader.readLine();
-                sendMessage(message);
-            }
-            catch (IOException e) {
-                closeAll(socket, bufferedReader, bufferedWriter);
-                break;
-            }
+//            System.out.println(out);
+            sendMessage(out);
         }
     }
-    public void sendMessage(String message) {
+    public void sendMessage(Object message) {
         for (ClientHandler client : clients) {
             try {
                 if (!client.user.equals(user)) {
-                    client.bufferedWriter.write(message);
-                    client.bufferedWriter.newLine();
-                    client.bufferedWriter.flush();
+                    client.out.writeObject(message);
+                    client.out.flush();
                 }
             }
             catch (IOException e) {
-                closeAll(socket, bufferedReader, bufferedWriter);
+                closeAll(socket, in, out);
             }
         }
     }
     public void removeClient() {
         clients.remove(this);
     }
-    public void closeAll(Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter) {
+    public void closeAll(Socket socket, ObjectInputStream in, ObjectOutputStream out) {
         removeClient();
         try {
-            if (bufferedReader != null) {
-                bufferedReader.close();
+            if (in != null) {
+                in.close();
             }
-            if (bufferedWriter != null) {
-                bufferedWriter.close();
+            if (out != null) {
+                out.close();
             }
             if (socket != null) {
                 socket.close();
