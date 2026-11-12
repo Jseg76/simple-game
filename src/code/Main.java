@@ -1,30 +1,76 @@
 package code;
 
-import javax.swing.JFrame;
 import java.awt.*;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
 
 
 public class Main {
-    static int width = 800;
-    static int height = 600;
-    static JFrame frame;
-    private static Canvas canvas;
-    static int scale = 1;
-    static int FPS = 60;
-    static int port = 8888;
+    static ArrayList<ClientHandler> clients = new ArrayList();
+    int port;
+    public Main(int port) {
+        this.port = port;
+    }
+    public void runServer() {
+        Socket socket = null;
+        try {
+            ServerSocket serverSocket = new ServerSocket(this.port);
+            while (true) {
+                socket = serverSocket.accept();
+                System.out.println(socket.getInetAddress() + " has joined ");
+                ClientHandler clientHandler = new ClientHandler(socket);
+                clients.add(clientHandler);
+                new Thread(clientHandler).start();
+            }
+        }
+        catch (IOException e) {
+            try {
+                socket.close();
+                clients.remove(this);
+                System.out.println("client has left");
+            }
+            catch (IOException e1) {
+                System.out.println("no");
+            }
+        }
+    }
+    public void send(ClientHandler self) {
+        for (ClientHandler client : this.clients) {
+            if (client != self) {
+            }
+        }
+    }
 
     public static void main() throws IOException {
-        Game game = new Game();
-        frame =  game.addFrame();
+        Main game = new Main(8888);
+        game.runServer();
+    }
+}
 
-        ServerSocket serverSocket = new ServerSocket(port);
-        Server server = new Server(serverSocket);
-        server.runServer();
+class ClientHandler implements Runnable {
+    Socket socket;
+    ObjectInputStream in; ObjectOutputStream out;
 
-        Thread gameThread = new Thread(game);
-        gameThread.start();
-        game.running = true;
+    public ClientHandler(Socket socket) {
+        this.socket = socket;
+    }
+    @Override
+    public void run() {
+        try {
+            out = new ObjectOutputStream(socket.getOutputStream());
+            in = new ObjectInputStream(socket.getInputStream());
+            try {
+                out.writeObject(in.readObject());
+                System.out.println("working");
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
