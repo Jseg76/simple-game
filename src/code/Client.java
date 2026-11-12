@@ -1,66 +1,53 @@
 package code;
 
-import java.awt.*;
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.Scanner;
-import java.awt.color.*;
 
-public class Client{
-    private Socket socket;
-    private ObjectOutputStream out;
-    private ObjectInputStream in;
-    private String user;
-    private Player player;
-    private Player p;
+public class Client {
+    String host; int port;
+    Socket socket;
+    ObjectOutputStream out;
+    ObjectInputStream in;
 
-    public Client(Socket socket, String user) {
-        try {
-            this.socket = socket;
-            this.out = new ObjectOutputStream(socket.getOutputStream());
-            this.in = new ObjectInputStream(socket.getInputStream());
-            this.user = user;
-            this.player = new Player(150, 200, 50, 50, Color.RED, 10);
-        }
-        catch (IOException e) {
-            closeAll(socket, in, out);
-        }
-    }
-    public void sendMessage() throws IOException {
-        while (socket.isConnected()) {
-            out.writeObject(player);
-            out.flush();
-        }
+    public Client(String host, int port) throws IOException {
+        this.host = host; this.port = port;
+        this.socket = new Socket(host, port);
+        this.in = new ObjectInputStream(socket.getInputStream());
+        this.out = new ObjectOutputStream(socket.getOutputStream());
+        System.out.println("Connected");
     }
     public void listen() {
-        new Thread(new Runnable() {
-            public void run() {
-                while (socket.isConnected()) {
-
+        new Thread(() -> {
+            while (true) {
+                try {
+                    Player p = (Player) in.readObject();
+                    System.out.println(p.x);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
                 }
             }
         }).start();
     }
-    public void closeAll(Socket socket, ObjectInputStream in, ObjectOutputStream out) {
-        try {
-            if (in != null) {
-                in.close();
+    public void send(Player player) {
+        new Thread(() -> {
+            while (true) {
+                try {
+                    out.writeObject(player);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
-            if (out != null) {
-                out.close();
-            }
-            if (socket != null) {
-                socket.close();
-            }
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-}
+        }).start();
+    }
+
     public static void main() throws IOException {
-        Socket socket = new Socket("localhost", 8888);
-        Client client = new Client(socket, "j");
+        Client client = new Client("localhost", 8888);
+        Player player = new Player(100, 200, 50, 50);
         client.listen();
-        client.sendMessage();
+        client.send(player);
     }
 }
