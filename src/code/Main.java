@@ -10,32 +10,25 @@ import java.util.ArrayList;
 
 
 public class Main {
-    static ArrayList<ClientHandler> clients = new ArrayList();
+    ArrayList<ClientHandler> clients;
     int port;
     public Main(int port) {
         this.port = port;
+        this.clients = new ArrayList();
     }
-    public void runServer() {
+    public void runServer() throws IOException {
         Socket socket = null;
         try {
             ServerSocket serverSocket = new ServerSocket(this.port);
             while (true) {
                 socket = serverSocket.accept();
                 System.out.println(socket.getInetAddress() + " has joined ");
-                ClientHandler clientHandler = new ClientHandler(socket);
+                ClientHandler clientHandler = new ClientHandler(socket, this);
                 clients.add(clientHandler);
                 new Thread(clientHandler).start();
             }
         }
         catch (IOException e) {
-            try {
-                socket.close();
-                clients.remove(this);
-                System.out.println("client has left");
-            }
-            catch (IOException e1) {
-                System.out.println("no");
-            }
         }
     }
     public void send(ClientHandler self) {
@@ -45,32 +38,41 @@ public class Main {
         }
     }
 
-    public static void main() throws IOException {
+    static void main() throws IOException {
         Main game = new Main(8888);
         game.runServer();
     }
 }
 
 class ClientHandler implements Runnable {
-    Socket socket;
+    Socket socket; Main game;
     ObjectInputStream in; ObjectOutputStream out;
 
-    public ClientHandler(Socket socket) {
+    public ClientHandler(Socket socket, Main game) {
         this.socket = socket;
+        this.game = game;
     }
     @Override
     public void run() {
         try {
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
-            try {
-                out.writeObject(in.readObject());
-                System.out.println("working");
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
+            while (true) {
+                try {
+                    Player p = (Player) in.readObject();
+                    out.writeObject(p);
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (IOException e){
+            try {
+                socket.close();
+            }
+            catch (IOException e1) {
+            }
+            game.clients.remove(this);
+            System.out.println("client has left");
         }
     }
 }
