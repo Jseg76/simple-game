@@ -11,42 +11,39 @@ import java.util.ArrayList;
 
 public class Main {
     ArrayList<ClientHandler> clients;
+    ArrayList<Player> players;
     int port;
-    public Main(int port) {
+    ServerSocket serverSocket;
+    public Main(int port) throws IOException {
         this.port = port;
         this.clients = new ArrayList();
-    }
-    public void runServer() throws IOException {
-        Socket socket = null;
-        try {
-            ServerSocket serverSocket = new ServerSocket(this.port);
-            while (true) {
-                socket = serverSocket.accept();
-                System.out.println(socket.getInetAddress() + " has joined ");
-                ClientHandler clientHandler = new ClientHandler(socket, this);
-                clients.add(clientHandler);
-                new Thread(clientHandler).start();
-            }
-        }
-        catch (IOException e) {
-        }
-    }
-    public void send(ClientHandler self) {
-        for (ClientHandler client : this.clients) {
-            if (client != self) {
-            }
-        }
-    }
+        this.players = new ArrayList();
+        this.serverSocket = new ServerSocket(this.port);
 
-    static void main() throws IOException {
+        while (true) {
+            Socket socket = serverSocket.accept();
+            ClientHandler clientHandler = new ClientHandler(socket, this);
+            clients.add(clientHandler);
+            this.players.add(new Player(0,0,1,1,Color.white));
+            new Thread(clientHandler).start();
+        }
+    }
+    public void sendAll() throws IOException {
+        for (ClientHandler clientHandler : clients) {
+            clientHandler.out.writeObject(this.players);
+        }
+    }
+    public void main() throws IOException {
         Main game = new Main(8888);
-        game.runServer();
+        while (true) {
+            this.sendAll();
+        }
     }
 }
-
 class ClientHandler implements Runnable {
     Socket socket; Main game;
     ObjectInputStream in; ObjectOutputStream out;
+    int clientNum;
 
     public ClientHandler(Socket socket, Main game) {
         this.socket = socket;
@@ -58,19 +55,22 @@ class ClientHandler implements Runnable {
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
             while (true) {
+                this.clientNum = game.clients.indexOf(this);
+                ArrayList<Player> players = new ArrayList<>();
                 try {
-                    Player p = (Player) in.readObject();
-                    out.writeObject(p);
-                } catch (ClassNotFoundException e) {
-                    throw new RuntimeException(e);
+                    Player player = (Player) in.readObject();
+                    game.players.set(clientNum, new Player(player.x, player.y, player.width, player.height, player.color));
+                    players = game.players;
+                    out.writeObject(players);
+                }
+                catch (ClassNotFoundException e) {throw new RuntimeException(e);
                 }
             }
         } catch (IOException e){
             try {
                 socket.close();
             }
-            catch (IOException e1) {
-            }
+            catch (IOException e1) {}
             game.clients.remove(this);
             System.out.println("client has left");
         }
