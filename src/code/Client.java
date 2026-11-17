@@ -2,83 +2,87 @@ package code;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.image.BufferStrategy;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Optional;
 
-public class Client {
-    String host; int port;
+public class Client extends JFrame implements KeyListener {
+    String host;
+    int port, frameWidth, frameHeight, FPS;
     Socket socket;
     ObjectOutputStream out;
     ObjectInputStream in;
-    JFrame frame; Canvas canvas;
-    int frameWidth; int frameHeight;
-    int FPS;
+    Canvas canvas;
+    ArrayList<Character> keys;
 
     public Client(String host, int port) throws IOException {
-        this.host = host; this.port = port; this.socket = new Socket(host, port);
-        this.in = new ObjectInputStream(socket.getInputStream());
-        this.out = new ObjectOutputStream(socket.getOutputStream());
-        this.FPS = 60;
-        System.out.println("Connected");
-    }
-    public void createFrame(int width, int height) {
-        this.frameWidth = width; this.frameHeight = height;
-        frame = new JFrame();
-        frame.setSize(width, height); frame.setLocationRelativeTo(null);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setResizable(false); frame.setVisible(true);
-        canvas = new Canvas();
-        canvas.setSize(width, height);
-        canvas.setFocusable(true);
-        frame.add(canvas); frame.pack();
+        frameWidth = 800; frameHeight = 600;
+        setSize(frameWidth, frameHeight);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        canvas = new Canvas(); canvas.setSize(800,600);
+        canvas.setFocusable(true); canvas.addKeyListener(this);
+        add(canvas); setVisible(true);
+        setLocationRelativeTo(null);
+
+        this.host = host; this.port = port; socket = new Socket(host, port);
+        in = new ObjectInputStream(socket.getInputStream());
+        out = new ObjectOutputStream(socket.getOutputStream());
+        FPS = 60;
+        keys = new ArrayList();
     }
 
-    public Player listen() {
-        while (true) {
-            try {
-                return (Player) in.readObject();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-        }
+    @Override
+    public void keyTyped(KeyEvent e) {
     }
-    public void send(Player player) {
-        try {
-            out.writeObject(player);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    @Override
+    public void keyPressed(KeyEvent e) {
+        char key = e.getKeyChar();
+        this.keys.add(key);
+        System.out.println(keys);
     }
-
+    @Override
+    public void keyReleased(KeyEvent e) {
+        char key = e.getKeyChar();
+        this.keys.remove(key);
+        System.out.println(keys);
+    }
     static void main() throws IOException {
         Client client = new Client("localhost", 8888);
-        client.createFrame(800, 600);
-        Player player = new Player(100, 200, 50, 50, Color.RED);
+        Player player = new Player(500, 200, 50, 50, Color.RED);
 
-        double drawTime = 1000000000/client.FPS; double delta = 0;
-        long lastTime = System.nanoTime(); long currentTime;
-        
         new Thread(() -> {
-            Player p = client.listen();
-            p.draw(client.canvas);
-        }).start();
-        while (true) {
-            currentTime = System.nanoTime();
-            delta += (currentTime - lastTime) / drawTime;
-            lastTime = currentTime;
-
-            if (delta >= 1) {
-                p.draw(client.canvas);
-                client.canvas.getGraphics().clearRect(0, 0, client.frameWidth, client.frameHeight);
-                delta--;
+            double drawTime = 1000000000 / client.FPS;
+            double delta = 0;
+            long lastTime = System.nanoTime();
+            long currentTime;
+            while (true) {
+                ArrayList<Player> players = new ArrayList<>();
+                try {
+                    client.out.writeObject(new Player(player.x, player.y, player.width, player.height, player.color));
+                    players = (ArrayList<Player>) client.in.readObject();
+                    System.out.println(players);
+                }
+                catch (IOException | ClassNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+                currentTime = System.nanoTime();
+                delta += (currentTime - lastTime) / drawTime;
+                lastTime = currentTime;
+                if (delta >= 1) {
+                    player.move(client.keys);
+                    for (Player p : players) {
+                        Player.draw(p, client.canvas);
+//                        System.out.println(p);
+                    }
+//                    client.canvas.getGraphics().clearRect(0, 0, client.frameWidth, client.frameHeight);
+                    delta--;
+                }
             }
-            client.send(player);
-        }
+        }).start();
     }
 }
