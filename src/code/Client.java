@@ -4,11 +4,13 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.image.BufferStrategy;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Optional;
 
 public class Client extends JFrame implements KeyListener {
@@ -41,19 +43,15 @@ public class Client extends JFrame implements KeyListener {
     }
     @Override
     public void keyPressed(KeyEvent e) {
-        char key = e.getKeyChar();
-        this.keys.add(key);
-        System.out.println(keys);
+        this.keys.add(e.getKeyChar());
     }
     @Override
     public void keyReleased(KeyEvent e) {
-        char key = e.getKeyChar();
-        this.keys.remove(key);
-        System.out.println(keys);
+        this.keys.removeAll(Collections.singleton(e.getKeyChar()));
     }
     static void main() throws IOException {
         Client client = new Client("localhost", 8888);
-        Player player = new Player(500, 200, 50, 50, Color.RED);
+        Player player = new Player(200, 200, 50, 50, Color.BLUE);
 
         new Thread(() -> {
             double drawTime = 1000000000 / client.FPS;
@@ -63,9 +61,9 @@ public class Client extends JFrame implements KeyListener {
             while (true) {
                 ArrayList<Player> players = new ArrayList<>();
                 try {
-                    client.out.writeObject(new Player(player.x, player.y, player.width, player.height, player.color));
+                    client.out.writeObject(player);
+                    client.out.reset();
                     players = (ArrayList<Player>) client.in.readObject();
-                    System.out.println(players);
                 }
                 catch (IOException | ClassNotFoundException e) {
                     throw new RuntimeException(e);
@@ -74,15 +72,28 @@ public class Client extends JFrame implements KeyListener {
                 delta += (currentTime - lastTime) / drawTime;
                 lastTime = currentTime;
                 if (delta >= 1) {
+                    client.canvas.getGraphics().clearRect(0, 0, client.frameWidth, client.frameHeight);
                     player.move(client.keys);
-                    for (Player p : players) {
-                        Player.draw(p, client.canvas);
-//                        System.out.println(p);
-                    }
-//                    client.canvas.getGraphics().clearRect(0, 0, client.frameWidth, client.frameHeight);
+                    System.out.println(player.x);
+                    client.draw(players);
+//                    Player.draw();
                     delta--;
                 }
             }
         }).start();
+    }
+    public void draw(ArrayList<Player> players) {
+        BufferStrategy bs = canvas.getBufferStrategy();
+        if (bs == null) {
+            canvas.createBufferStrategy(3);
+            return;
+        }
+        Graphics g = bs.getDrawGraphics();
+        g.clearRect(0, 0, frameWidth, frameHeight);
+        for (Player p : players) {
+            p.draw(g);
+        }
+        bs.show();
+        g.dispose();
     }
 }
