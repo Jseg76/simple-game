@@ -8,7 +8,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 
-
 public class Main {
     ArrayList<ClientHandler> clients;
     ArrayList<Player> players;
@@ -33,10 +32,10 @@ public class Main {
             clientHandler.out.writeObject(this.players);
         }
     }
-    public void main() throws IOException {
+    static void main() throws IOException {
         Main game = new Main(8888);
         while (true) {
-            this.sendAll();
+            game.sendAll();
         }
     }
 }
@@ -59,9 +58,10 @@ class ClientHandler implements Runnable {
                 ArrayList<Player> players = new ArrayList<>();
                 try {
                     Player player = (Player) in.readObject();
-                    game.players.set(clientNum, new Player(player.x, player.y, player.width, player.height, player.color));
+                    game.players.set(clientNum, player);
                     players = game.players;
                     out.writeObject(players);
+                    out.reset();
                 }
                 catch (ClassNotFoundException e) {throw new RuntimeException(e);
                 }
