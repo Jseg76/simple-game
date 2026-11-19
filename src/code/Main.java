@@ -27,22 +27,16 @@ public class Main {
             new Thread(clientHandler).start();
         }
     }
-    public void sendAll() throws IOException {
-        for (ClientHandler clientHandler : clients) {
-            clientHandler.out.writeObject(this.players);
-        }
-    }
     static void main() throws IOException {
         Main game = new Main(8888);
-        while (true) {
-            game.sendAll();
-        }
     }
 }
+
 class ClientHandler implements Runnable {
     Socket socket; Main game;
     ObjectInputStream in; ObjectOutputStream out;
     int clientNum;
+    Player player;
 
     public ClientHandler(Socket socket, Main game) {
         this.socket = socket;
@@ -57,8 +51,8 @@ class ClientHandler implements Runnable {
                 this.clientNum = game.clients.indexOf(this);
                 ArrayList<Player> players = new ArrayList<>();
                 try {
-                    Player player = (Player) in.readObject();
-                    game.players.set(clientNum, player);
+                    this.player = (Player) in.readObject();
+                    game.players.set(clientNum, this.player);
                     players = game.players;
                     out.writeObject(players);
                     out.reset();
@@ -72,6 +66,7 @@ class ClientHandler implements Runnable {
             }
             catch (IOException e1) {}
             game.clients.remove(this);
+            game.players.remove(this.player);
             System.out.println("client has left");
         }
     }
