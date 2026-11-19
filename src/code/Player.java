@@ -1,5 +1,6 @@
 package code;
 
+import javax.swing.*;
 import java.awt.*;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -25,9 +26,5 @@ public class Player implements Serializable {
         if (!(keys.contains('w') || keys.contains('s'))) {this.velY *= this.friction;}
         this.x += this.velX;
         this.y += this.velY;
-    }
-    public void draw(Graphics g) {
-        g.setColor(this.color);
-        g.fillRect((int) (this.x + .5), (int) (this.y + .5), this.width, this.height);
     }
 }
