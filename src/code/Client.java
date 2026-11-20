@@ -20,6 +20,8 @@ public class Client extends JFrame implements KeyListener {
     GPanel panel;
 
     public Client(String host, int port) throws IOException {
+        FPS = 60;
+        keys = new ArrayList<>();
         this.panel = new GPanel();
         getContentPane().add(panel);
         addKeyListener(this);
@@ -33,17 +35,15 @@ public class Client extends JFrame implements KeyListener {
         this.host = host; this.port = port; socket = new Socket(host, port);
         in = new ObjectInputStream(socket.getInputStream());
         out = new ObjectOutputStream(socket.getOutputStream());
-        FPS = 60;
-        keys = new ArrayList();
     }
-    public class GPanel extends JPanel {
+    public static class GPanel extends JPanel {
         ArrayList<Player> players = new ArrayList<>();
         @Override
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
             for (Player p : players) {
                 g.setColor(p.color);
-                g.fillRect((int) (p.x+.5), (int) (p.y+.5), p.width, p.height);
+                g.fillRect((int) (p.x + .5), (int) (p.y + .5), p.width, p.height);
             }
         }
     }
@@ -60,11 +60,11 @@ public class Client extends JFrame implements KeyListener {
         this.keys.removeAll(Collections.singleton(e.getKeyChar()));
     }
     static void main() throws IOException {
-        Client client = new Client("localhost", 8888);
+        Client client = new Client("10.218.144.16", 8888);
         Player player = new Player(200, 200, 50, 50, Color.BLUE);
 
         new Thread(() -> {
-            double drawTime = 1000000000 / client.FPS;
+            double drawTime = 1000000000.0 / client.FPS;
             double delta = 0;
             long lastTime = System.nanoTime();
             long currentTime;
